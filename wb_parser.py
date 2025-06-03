@@ -72,7 +72,12 @@ class ApiHandler:
         except Exception as e:
             print(e)
 
-        return response
+        prices = {}
+
+        for elem in json.loads(response.text):
+            prices[elem['date']] = elem['price']
+
+        return prices
 
     def get_prices_history_by_wildberries_id(self, id: str):
         moneyplace_id = self.__get_moneyplace_product_id_by_wildberries_id(id)
@@ -82,7 +87,8 @@ class ApiHandler:
 def main():
     api = ApiHandler(base_url='https://api.moneyplace.io')
     response = api.get_prices_history_by_wildberries_id('4198033')
-    print(response.text)
+    for key in response.keys():
+        print(key, ":", response[key])
 
 
 if __name__ == "__main__":
