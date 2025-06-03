@@ -81,4 +81,6 @@ if __name__ == "__main__":
     prediction = model.predict(sample_data)
     print(
         f"Предсказание: {'Фейковая скидка' if prediction[0] else 'Настоящая скидка'}")
-    print(f"Вероятность: {model.predict_proba(sample_data)[0]}")
+    # Берем только вероятность класса 1 (фейковая)
+    proba = model.predict_proba(sample_data)[0][1]
+    print(f"Вероятность фейковой скидки: {proba:.2%}")
