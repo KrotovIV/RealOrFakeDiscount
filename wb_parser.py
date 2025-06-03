@@ -36,8 +36,8 @@ class ApiHandler:
 
         return response
 
-    def __get_moneyplace_product_id(self, wildberries_product_id, mp):
-        endpoint = f'/v1/product?nop=0&per-page=19&q[mp][in]=wildberries,ozon,beru,kazan,lamoda&q[sku][equal]={wildberries_product_id}&period=period'
+    def __get_moneyplace_product_id(self, product_id, mp):
+        endpoint = f'/v1/product?nop=0&per-page=19&q[mp][in]=wildberries,ozon,beru,kazan,lamoda&q[sku][equal]={product_id}&period=period'
 
         try:
             response = self.get(endpoint=endpoint, headers=self.headers)
@@ -60,6 +60,9 @@ class ApiHandler:
     def __get_moneyplace_product_id_by_wildberries_id(self, wildberries_id: str):
         return self.__get_moneyplace_product_id(wildberries_id, 'wildberries')
 
+    def __get_moneyplace_product_id_by_ozon_id(self, id):
+        return self.__get_moneyplace_product_id(id, 'ozon')
+
     def get(self, endpoint, params=None, headers=None):
         return self.__send_request("GET", endpoint=endpoint,
                                    params=params, headers=headers)
@@ -75,7 +78,10 @@ class ApiHandler:
         prices = {}
 
         for elem in json.loads(response.text):
-            prices[elem['date']] = elem['price']
+            prices[elem['date']] = {
+                "price": elem['basic_price'],
+                "discount": elem['discount']
+            }
 
         return prices
 
@@ -83,12 +89,17 @@ class ApiHandler:
         moneyplace_id = self.__get_moneyplace_product_id_by_wildberries_id(id)
         return self.__get_prices_history(moneyplace_id)
 
+    def get_prices_history_by_ozon_id(self, id: str):
+        moneyplace_id = self.__get_moneyplace_product_id_by_ozon_id(id)
+        print(moneyplace_id)
+        return self.__get_prices_history(moneyplace_id)
+
 
 def main():
     api = ApiHandler(base_url='https://api.moneyplace.io')
-    response = api.get_prices_history_by_wildberries_id('4198033')
+    response = api.get_prices_history_by_ozon_id('178610175')
     for key in response.keys():
-        print(key, ":", response[key])
+        print(key, ":", response[key]['price'], ",", response[key]['discount'])
 
 
 if __name__ == "__main__":
