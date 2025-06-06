@@ -44,26 +44,25 @@ class SteamPriceParser:
             return None
 
     def __normalize_resopnse(self, json_response):
-        normalized_response = {
-            "prices": [],
-            'sales': {}
-        }
+        normalized_response = []
 
         raw_prices = json_response['data']['history']
         raw_sales = json_response['data']['sales']
+        sales = []
+
+        # # # normalize sales
+        for key in raw_sales.keys():
+            sales.append(self.__normalize_unix_date(int(key)))
 
         # normalize prices
         for i in range(len(raw_prices)):
-            normalized_response['prices'].append({
-                'x': self.__normalize_unix_date(raw_prices[i]['x']),
+            normalized_date = self.__normalize_unix_date(raw_prices[i]['x'])
+            normalized_response.append({
+                'x': normalized_date,
                 'y': raw_prices[i]['y'],
-                'd': raw_prices[i]['d']
+                'd': raw_prices[i]['d'],
+                'is_sale': int(normalized_date in sales)
             })
-
-        # normalize sales
-        for key in raw_sales.keys():
-            normalized_response['sales'][self.__normalize_unix_date(
-                int(key))] = raw_sales[key]
 
         return normalized_response
 
