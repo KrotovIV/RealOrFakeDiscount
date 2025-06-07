@@ -1,12 +1,11 @@
-# model.py
 import joblib
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score
 from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import Pipeline
 from datetime import datetime
 from typing import Dict, List, Any
 import os
@@ -21,7 +20,8 @@ class Model:
         self.feature_columns = [
             'current_price', 'current_discount', 'base_price', 'price_ratio',
             'max_discount', 'discount_diff', 'is_sale', 'price_std',
-            'price_trend', 'days_since_last_change'
+            'price_trend', 'days_since_last_change', 'large_price_changes',
+            'recent_price_changes'
         ]
 
     def load(self):
@@ -63,18 +63,19 @@ class Model:
             X, y, test_size=test_size, random_state=random_state
         )
 
-        # Создание и обучение модели
-        self.model = make_pipeline(
-            StandardScaler(),
-            LogisticRegression(
-                penalty='l2',
-                C=1.0,
-                solver='lbfgs',
-                max_iter=1000,
+        # Создание и обучение модели (Random Forest вместо Logistic Regression)
+        self.model = Pipeline([
+            ('scaler', StandardScaler()),
+            ('classifier', RandomForestClassifier(
+                n_estimators=200,
+                max_depth=10,
+                min_samples_split=5,
+                min_samples_leaf=2,
+                class_weight='balanced',
                 random_state=random_state,
-                class_weight='balanced'  # Добавляем балансировку классов
-            )
-        )
+                n_jobs=-1
+            ))
+        ])
 
         self.model.fit(X_train, y_train)
 
@@ -119,6 +120,13 @@ class Model:
         sale_dates = [datetime.strptime(p['x'], '%Y-%m-%d')
                       for p in price_history]
 
+        # Дополнительные признаки
+        price_changes = [abs(price_values[i] - price_values[i-1])
+                         for i in range(1, len(price_values))]
+        large_price_changes = sum(1 for change in price_changes if change > 50)
+        recent_price_changes = sum(
+            1 for change in price_changes[-5:]) if len(price_changes) >= 5 else 0
+
         # Вычисляем дни с последнего изменения цены
         days_since_last_change = 0
         if len(price_history) > 1:
@@ -140,7 +148,9 @@ class Model:
             'is_sale': last_entry['is_sale'],
             'price_std': np.std(price_values) if len(price_values) > 1 else 0,
             'price_trend': self._calculate_trend(price_values),
-            'days_since_last_change': days_since_last_change
+            'days_since_last_change': days_since_last_change,
+            'large_price_changes': large_price_changes,
+            'recent_price_changes': recent_price_changes
         }
 
         return features
