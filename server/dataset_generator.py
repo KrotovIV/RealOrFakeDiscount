@@ -26,23 +26,29 @@ class PriceGenerator:
         prices = []
         current_date = start_date
 
+        # Определяем базовые уровни цен (обычно 1-3 уровня)
+        price_levels = sorted([base_price * random.uniform(0.6, 0.9)
+                              for _ in range(random.randint(1, 3))])
+        current_level = random.choice(price_levels)
+
         while current_date <= end_date:
-            # Определяем, идет ли сейчас распродажа
             is_sale = current_date.date() in self.sale_dates
 
-            # Плавные изменения базовой цены
-            base_price += random.uniform(-20, 20)
-            base_price = max(100, min(base_price, 1500))
+            # Плавное изменение уровня цен (редко)
+            if random.random() < 0.05:  # 5% chance to change price level
+                current_level = random.choice(price_levels)
 
-            # Реальная скидка 5-30% во время распродаж, 0-10% в обычное время
+            # Реальная скидка 20-40% во время распродаж, 0-10% в обычное время
             if is_sale:
-                # 20-40% скидка на распродажах
                 discount = random.uniform(0.2, 0.4)
+                current_price = current_level * (1 - discount)
             else:
-                discount = random.uniform(0, 0.1) if random.random(
-                ) < 0.3 else 0  # 0-10% скидка иногда
-
-            current_price = base_price * (1 - discount)
+                if random.random() < 0.3:  # 30% chance of small discount
+                    discount = random.uniform(0, 0.1)
+                    current_price = current_level * (1 - discount)
+                else:
+                    discount = 0
+                    current_price = current_level
 
             # Небольшие флуктуации текущей цены
             current_price += random.uniform(-10, 10)
@@ -119,6 +125,13 @@ class PriceGenerator:
         price_values = [p['y'] for p in prices]
         discount_values = [p['d'] for p in prices]
 
+        # Дополнительные признаки для улучшения классификации
+        price_changes = [abs(price_values[i] - price_values[i-1])
+                         for i in range(1, len(price_values))]
+        large_price_changes = sum(1 for change in price_changes if change > 50)
+        recent_price_changes = sum(
+            1 for change in price_changes[-5:]) if len(price_changes) >= 5 else 0
+
         # Признаки для модели
         features = {
             'current_price': last_entry['y'],
@@ -131,6 +144,8 @@ class PriceGenerator:
             'price_std': np.std(price_values) if len(price_values) > 1 else 0,
             'price_trend': self._calculate_trend(price_values),
             'days_since_last_change': self._days_since_last_change(prices),
+            'large_price_changes': large_price_changes,
+            'recent_price_changes': recent_price_changes,
             'is_fake': 0  # Будет установлено позже
         }
 
@@ -169,7 +184,8 @@ def generate_dataset(num_samples: int, output_file: str):
         headers = [
             'current_price', 'current_discount', 'base_price', 'price_ratio',
             'max_discount', 'discount_diff', 'is_sale', 'price_std',
-            'price_trend', 'days_since_last_change', 'is_fake'
+            'price_trend', 'days_since_last_change', 'large_price_changes',
+            'recent_price_changes', 'is_fake'
         ]
         writer.writerow(headers)
 
@@ -195,6 +211,5 @@ def generate_dataset(num_samples: int, output_file: str):
             writer.writerow([features[h] for h in headers])
 
 
-# Генерация датасета (10000 samples)
-generate_dataset(10000, 'improved_discount_dataset.csv')
+generate_dataset(500000, 'improved_discount_dataset.csv')
 print("Улучшенный датасет успешно сгенерирован и сохранён в improved_discount_dataset.csv")
