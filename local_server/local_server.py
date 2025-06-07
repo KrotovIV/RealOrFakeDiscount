@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
 from steam_parser import SteamPriceParser
 
 app = Flask(__name__)

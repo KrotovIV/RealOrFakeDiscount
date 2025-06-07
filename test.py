@@ -1,6 +1,5 @@
 import requests
-import json
-from steam_parser import SteamPriceParser
+from local_server.steam_parser import SteamPriceParser
 
 parser = SteamPriceParser()
 
