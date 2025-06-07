@@ -8,11 +8,13 @@
     "default_icon": "icon.png"
   },
   "permissions": [
-    "tabs"
+    "tabs",
+    "storage"
   ],
   "host_permissions": [
     "http://localhost:7123/*",
-    "https://store.steampowered.com/*"
+    "https://store.steampowered.com/*",
+    "http://krotoviv.pythonanywhere.com/*"
   ],
   "icons": {
     "48": "icon.png",

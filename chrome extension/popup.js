@@ -1,3 +1,69 @@
+// Состояние настроек
+let settings = {
+    highConfidenceOnly: false
+};
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // Загружаем настройки из хранилища
+    await loadSettings();
+
+    // Настройка обработчиков кнопок
+    document.getElementById('settings-btn').addEventListener('click', showSettings);
+    document.getElementById('back-btn').addEventListener('click', showMainView);
+
+    // Основная логика
+    try {
+        const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+        if (!tab) {
+            showMessage('No active tab found');
+            return;
+        }
+
+        const appId = extractAppId(tab.url);
+
+        if (!appId) {
+            handleNonGamePage(tab.url);
+            return;
+        }
+
+        showAppId(appId);
+        showStatusContainers();
+        await fetchGameData(appId);
+    } catch (error) {
+        console.error('Popup error:', error);
+        showMessage(`Error: ${error.message}`);
+    }
+});
+
+// Функции для работы с настройками
+async function loadSettings() {
+    const storedSettings = await chrome.storage.sync.get('settings');
+    if (storedSettings.settings) {
+        settings = storedSettings.settings;
+        document.getElementById('highConfidenceToggle').checked = settings.highConfidenceOnly;
+    }
+}
+
+async function saveSettings() {
+    await chrome.storage.sync.set({ settings });
+}
+
+function showSettings() {
+    document.getElementById('main-view').style.display = 'none';
+    document.getElementById('settings-view').style.display = 'block';
+}
+
+function showMainView() {
+    document.getElementById('settings-view').style.display = 'none';
+    document.getElementById('main-view').style.display = 'block';
+}
+
+// Обработчик изменения тумблера
+document.getElementById('highConfidenceToggle').addEventListener('change', async function() {
+    settings.highConfidenceOnly = this.checked;
+    await saveSettings();
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
@@ -129,16 +195,37 @@ async function sendToRemoteAPI(priceHistory) {
     }
 }
 
+// Обновленная функция displayApiResults
 function displayApiResults(data) {
     const resultsContainer = document.getElementById('apiResults');
     const predictionElement = document.getElementById('predictionResult');
     const probabilityElement = document.getElementById('probabilityResult');
+    const probabilityContainer = document.getElementById('probabilityContainer');
 
-    // Просто выводим как есть, если сервер уже форматирует
-    predictionElement.textContent = data.prediction;
-    probabilityElement.textContent = data.probability;
+    // Извлекаем числовое значение вероятности (удаляем % и преобразуем в число)
+    const probabilityValue = parseFloat(data.probability.toString().replace('%', ''));
 
+    // Всегда показываем контейнер результатов
     resultsContainer.style.display = 'block';
+    console.log('до блока')
+    if (settings.highConfidenceOnly) {
+        console.log(probabilityValue)
+        if (!isNaN(probabilityValue) && probabilityValue >= 90) {
+            // Режим "90+%" И вероятность ≥90% - показываем оба значения
+            predictionElement.textContent = data.prediction;
+            probabilityElement.textContent = data.probability;
+            probabilityContainer.style.display = 'block';
+        } else {
+            // Режим "90+%" И вероятность <90% - показываем "Настоящая" и скрываем вероятность
+            predictionElement.textContent = "Настоящая";
+            probabilityContainer.style.display = 'none';
+        }
+    } else {
+        // Обычный режим - показываем все данные
+        predictionElement.textContent = data.prediction;
+        probabilityElement.textContent = data.probability;
+        probabilityContainer.style.display = 'block';
+    }
 }
 
 function hideApiResults() {

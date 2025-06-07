@@ -1,77 +1,163 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta charset="utf-8">
     <style>
-      body {
-        width: 250px;  /* Немного увеличим ширину */
-        padding: 10px;
-        font-family: Arial, sans-serif;
-        text-align: center;
-      }
-      #appId {
-        font-size: 18px;
-        font-weight: bold;
-        margin: 10px 0;
-        color: #4CAF50;
-      }
-      #message {
-        color: #666;
-        margin: 10px 0;
-      }
-      .status-indicator {
-        display: inline-block;
-        width: 15px;
-        height: 15px;
-        border-radius: 50%;
-        background-color: red;
-        margin-right: 5px;
-        vertical-align: middle;
-      }
-      .status-container {
-        margin: 10px 0;
-        display: none;
-        text-align: left;
-      }
-      .result-container {
-        margin-top: 15px;
-        padding: 10px;
-        background-color: #f5f5f5;
-        border-radius: 5px;
-        text-align: left;
-      }
-      .result-title {
-        font-weight: bold;
-        margin-bottom: 5px;
-      }
-      .result-value {
-        color: #333;
-      }
+        body {
+            width: 250px;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #settings-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #appId {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #4CAF50;
+        }
+        #message {
+            color: #666;
+            margin: 10px 0;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: red;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        .status-container {
+            margin: 10px 0;
+            display: none;
+            text-align: left;
+        }
+        .result-container {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            text-align: left;
+        }
+        .result-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .result-value {
+            color: #333;
+        }
+        .settings-container {
+            display: none;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+            margin-left: 10px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #4CAF50;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        .back-btn {
+            margin-top: 15px;
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
     </style>
-  </head>
-  <body>
-    <h3>Steam App Checker</h3>
-    <div id="appId"></div>
-    <div id="message"></div>
+</head>
+<body>
+    <div id="main-view">
+        <button id="settings-btn">⚙️</button>
+        <h3>Steam App Checker</h3>
+        <div id="appId"></div>
+        <div id="message"></div>
 
-    <div class="status-container" id="localServerStatus">
-      <span class="status-indicator" id="localStatus"></span>
-      <span id="localStatusText">Local: Request not sent</span>
+        <div class="status-container" id="localServerStatus">
+            <span class="status-indicator" id="localStatus"></span>
+            <span id="localStatusText">Local: Request not sent</span>
+        </div>
+
+        <div class="status-container" id="remoteServerStatus">
+            <span class="status-indicator" id="remoteStatus"></span>
+            <span id="remoteStatusText">Remote: Not processed</span>
+        </div>
+
+        <div class="result-container" id="apiResults" style="display: none;">
+            <div class="result-title">Prediction:</div>
+            <div class="result-value" id="predictionResult">-</div>
+
+            <div id="probabilityContainer">
+                <div class="result-title">Probability:</div>
+                <div class="result-value" id="probabilityResult">-</div>
+            </div>
+        </div>
     </div>
 
-    <div class="status-container" id="remoteServerStatus">
-      <span class="status-indicator" id="remoteStatus"></span>
-      <span id="remoteStatusText">Remote: Not processed</span>
-    </div>
+    <div id="settings-view" class="settings-container">
+        <h3>Settings</h3>
 
-    <div class="result-container" id="apiResults" style="display: none;">
-      <div class="result-title">Prediction:</div>
-      <div class="result-value" id="predictionResult">-</div>
+        <div class="setting-item">
+            <span>Only 90+% confidence</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="highConfidenceToggle">
+                <span class="slider"></span>
+            </label>
+        </div>
 
-      <div class="result-title">Probability:</div>
-      <div class="result-value" id="probabilityResult">-</div>
+        <button class="back-btn" id="back-btn">Back</button>
     </div>
 
     <script src="popup.js"></script>
-  </body>
+</body>
 </html>
