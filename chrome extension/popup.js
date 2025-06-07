@@ -101,7 +101,8 @@ async function fetchGameData(appId) {
 
 async function sendToRemoteAPI(priceHistory) {
     updateRemoteStatus('Sending request...', 'orange');
-    console.log('data sent to api', priceHistory);
+    hideApiResults();  // Скрываем предыдущие результаты
+
     try {
         const response = await fetch('http://krotoviv.pythonanywhere.com/predict', {
             method: 'POST',
@@ -112,15 +113,34 @@ async function sendToRemoteAPI(priceHistory) {
         });
 
         if (!response.ok) {
-            throw new Error(`Remote server error! status: ${response.status}`);
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const remoteData = await response.json();
-        console.log('Response from remote server:', remoteData);
+        const data = await response.json();
+        console.log('Response from remote server:', data);
         updateRemoteStatus('Response received', 'green');
+
+        // Отображаем полученные данные
+        displayApiResults(data);
     } catch (error) {
         console.error('Remote API error:', error);
         updateRemoteStatus('Request failed', 'red');
         showMessage(`Remote error: ${error.message}`);
     }
+}
+
+function displayApiResults(data) {
+    const resultsContainer = document.getElementById('apiResults');
+    const predictionElement = document.getElementById('predictionResult');
+    const probabilityElement = document.getElementById('probabilityResult');
+
+    // Просто выводим как есть, если сервер уже форматирует
+    predictionElement.textContent = data.prediction;
+    probabilityElement.textContent = data.probability;
+
+    resultsContainer.style.display = 'block';
+}
+
+function hideApiResults() {
+    document.getElementById('apiResults').style.display = 'none';
 }
