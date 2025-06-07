@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      body {
+        width: 200px;
+        padding: 10px;
+        font-family: Arial, sans-serif;
+        text-align: center;
+      }
+      #appId {
+        font-size: 18px;
+        font-weight: bold;
+        margin: 10px 0;
+        color: #4CAF50;
+      }
+      #message {
+        color: #666;
+        margin: 10px 0;
+      }
+      .status-indicator {
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        background-color: red;
+        margin-right: 5px;
+        vertical-align: middle;
+      }
+      .status-container {
+        margin: 10px 0;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h3>Steam App Checker</h3>
+    <div id="appId"></div>
+    <div id="message"></div>
+
+    <div class="status-container" id="localServerStatus">
+      <span class="status-indicator" id="localStatus"></span>
+      <span id="localStatusText">Local: Request not sent</span>
+    </div>
+
+    <div class="status-container" id="remoteServerStatus">
+      <span class="status-indicator" id="remoteStatus"></span>
+      <span id="remoteStatusText">Remote: Not processed</span>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
